@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Monitoring Dashboard</title>
+    
+    <!-- Firebase & Chart.js -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.0.0"></script>
+
+
+
+
+<style>
+     body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh; /* Ensures the footer stays at the bottom */
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        margin-top: 80px; /* Adjust to the height of the header */
+        margin-bottom: 60px; /* Adjust to the height of the footer */
+        flex-grow: 1; /* Make the container take up the remaining space */
+    }
+
+   .header {
+        position: fixed; /* Fix the header to the top */
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: #007BFF; /* Update to your company color */
+        color: white;
+        font-size: 28px;
+        text-align: center;
+        padding: 20px 0;
+        z-index: 1000; /* Make sure it's on top of other elements */
+    }
+
+    .section {
+        background-color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+
+    .section h2 {
+        font-size: 22px;
+        color: #007BFF; /* Updated color */
+        margin-bottom: 10px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 20px;
+    }
+
+    .info-box {
+        padding: 20px;
+        background-color: #fafafa;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        text-align: center;
+        transition: transform 0.2s; /* Smooth transition */
+    }
+
+    .info-box:hover {
+        transform: translateY(-5px); /* Lift effect on hover */
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+    }
+
+    .chart-container {
+        width: 100%;
+        height: 400px;
+        position: relative;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-top: 20px; /* Add margin for spacing */
+        border: 2px solid #007BFF; /* Border for better definition */
+    }
+
+    .export-button {
+        background-color: #007BFF; /* Updated color */
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    .export-button:hover {
+        background-color: #0056b3; /* Darker shade for hover */
+    }
+
+    footer {
+        position: fixed; /* Fix the footer to the bottom */
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 20px 0;
+        text-align: center;
+        background-color: #333;
+        color: white;
+        z-index: 1000; /* Make sure it's on top of other elements */
+    }
+</style>
+
+
+
+
+
+
+
+
+</head>
+<body>
+    <div class="header">
+        Production Monitoring Dashboard
+    </div>
+
+    <div class="container">
+	 <button class="export-button" onclick="goBack()">Back to Page</button>
+        <div class="section">
+            <h2>Production Summary</h2>
+            <div class="grid">
+                <div class="info-box">
+                    <strong>Finished Length</strong>
+                    <div id="lastValueDisplay">N/A</div>
+                </div>
+                <div class="info-box">
+                    <strong>Last Update (hours ago)</strong>
+                    <div id="lastUpdateDisplay">N/A</div>
+                </div>
+                <div class="info-box">
+                    <strong>Reset Production</strong>
+                    <div id="last24HourProduction">N/A</div>
+                </div>
+                <div class="info-box">
+                    <strong>Yesterday Production</strong>
+                    <div id="perDayProduction">N/A</div>
+                </div>
+                <div class="info-box">
+                    <strong>Month Production</strong>
+                    <div id="perMonthProduction">N/A</div>
+                </div>
+                <div class="info-box">
+                    <strong>Machine Status</strong>
+                    <div id="machineStatus">N/A</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Production Over Time</h2>
+            <div class="chart-container">
+                <canvas id="productionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <button class="export-button" onclick="exportToExcel()">Export Production Data to Excel</button>
+        </div>
+    </div>
+
+    <footer>
+        StressON | Production Monitoring System © 2024
+    </footer>
+
+    <script>
+        // Firebase configuration
+        var firebaseConfig = {
+             apiKey: "AIzaSyBUtpT41WDSPM2Vwd9ONkXrKQjSD1FgFJs",
+            authDomain: "customer-3-54cd9.firebaseapp.com",
+            databaseURL: "https://customer-3-54cd9-default-rtdb.firebaseio.com/",
+            projectId: "customer-3-54cd9",
+            storageBucket: "customer-3-54cd9.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:123456789abcd"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        var database = firebase.database();
+
+        var dailyProductionData = [];
+        var monthlyProductionData = [];
+
+
+
+
+
+
+
+// Initialize chart
+var ctx = document.getElementById('productionChart').getContext('2d');
+var productionChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [], // Populate with your data labels
+        datasets: [{
+            label: 'Production Over Time',
+            data: [], // Populate with your data points
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointHoverRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            zoom: {
+                pan: {
+                    enabled: true,
+                    mode: 'xy', // Allow panning on both x and y axes
+                    speed: 8,  // Speed of panning
+                    threshold: 10 // Minimum movement before panning kicks in
+                },
+                zoom: {
+                    wheel: {
+                        enabled: true, // Enable zooming with the mouse wheel
+                        speed: 0.08    // Adjust zoom speed
+                    },
+                    pinch: {
+                        enabled: true  // Enable pinch-to-zoom for touch devices
+                    },
+                    drag: {
+                        enabled: false  // Disable drag-to-zoom for now
+                    },
+                    mode: 'x' // Zoom only on the x-axis
+                }
+            }
+        },
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Date',
+                    color: '#333',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    }
+                }
+            },
+            y: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Production Count',
+                    color: '#333',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    }
+                }
+            }
+        }
+    }
+});
+
+
+
+
+
+
+
+
+
+var yesterdayProduction = 0;
+var monthProduction = 0;
+var previousDayProduction = null; // To track the last day's production
+var lastKnownLength = null; // To track the last known length
+
+
+
+
+
+
+        // Function to monitor Firebase data and update the chart
+        function monitorData() {
+            var sensorRef = database.ref('Sensor/readings');
+            sensorRef.on('value', function(snapshot) {
+                var timeLabels = [];
+                var productionValues = [];
+                var latestValue = null;
+                var latestTimestamp = null;
+
+                snapshot.forEach(function(childSnapshot) {
+                    var data = childSnapshot.val();
+                    var timestamp = data.timestamp;  // Firebase timestamp in seconds
+                    var length = data.length;
+
+                    // Convert timestamp to milliseconds and format as date
+                    var timestampInMillis = timestamp * 1000;
+		   var dateObj = new Date(timestampInMillis);
+                    var formattedDate = new Date(timestampInMillis).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',  // Abbreviated month (e.g., "Sep")
+                        day: '2-digit'   // Two-digit day
+                    });
+
+                    // Push formatted date to chart labels and production values to chart data
+                    timeLabels.push(formattedDate);
+                    productionValues.push(length);
+
+                    // Update the last known value and timestamp
+                    latestValue = length;
+                    latestTimestamp = timestampInMillis;
+                });
+
+                // Update the chart with the new data
+                productionChart.data.labels = timeLabels;
+                productionChart.data.datasets[0].data = productionValues;
+                productionChart.update();
+
+
+		 // Calculate yesterday's production from chart
+        calculateYesterdayProductionFromChart();
+
+        // Calculate monthly production from chart
+        calculateMonthlyProductionFromChart();
+
+
+
+
+function calculateYesterdayProductionFromChart() {
+    const chartData = productionChart.data.datasets[0].data;  
+    const timeLabels = productionChart.data.labels;  
+
+    console.log("Chart Data:", chartData);  
+    console.log("Time Labels:", timeLabels);  
+
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    console.log("Yesterday's Date:", yesterday.toLocaleDateString());  // Log the date for yesterday
+
+    let yesterdayStart = new Date(yesterday.setHours(0, 0, 0, 0)).getTime();
+    let yesterdayEnd = new Date(yesterday.setHours(23, 59, 59, 999)).getTime();
+
+    console.log("Yesterday Start:", new Date(yesterdayStart));  
+    console.log("Yesterday End:", new Date(yesterdayEnd));  
+
+    let firstValue = null;
+    let lastValue = null;
+
+    for (let i = 0; i < timeLabels.length; i++) {
+        const timestamp = new Date(timeLabels[i]).getTime();
+        console.log(`Timestamp for label ${timeLabels[i]}:`, timestamp);  
+
+        if (timestamp >= yesterdayStart && timestamp <= yesterdayEnd) {
+            console.log(`Value at timestamp ${timeLabels[i]}:`, chartData[i]);  
+            if (firstValue === null) {
+                firstValue = chartData[i];
+                console.log("First value found:", firstValue);  
+            }
+            lastValue = chartData[i];
+            console.log("Last value updated to:", lastValue);  
+        }
+    }
+
+    // If no values were found for yesterday, set production to 0
+    const productionYesterday = (firstValue !== null && lastValue !== null) ? lastValue - firstValue : 0; 
+    console.log("Production for yesterday:", productionYesterday);  
+    document.getElementById("perDayProduction").innerText = productionYesterday;
+}
+
+
+
+
+// Calculate monthly production from chart data
+function calculateMonthlyProductionFromChart() {
+    const chartData = productionChart.data.datasets[0].data;  // Get the production data from the chart
+    const timeLabels = productionChart.data.labels;  // Get the corresponding timestamps
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    let firstValue = null;
+    let lastValue = null;
+
+    for (let i = 0; i < timeLabels.length; i++) {
+        const date = new Date(timeLabels[i]);
+        const month = date.getMonth();
+        const year = date.getFullYear();
+
+        if (month === currentMonth && year === currentYear) {
+            if (firstValue === null) {
+                firstValue = chartData[i];
+            }
+            lastValue = chartData[i];
+        }
+    }
+
+    const monthProduction = firstValue !== null && lastValue !== null ? lastValue - firstValue : "N/A";
+    document.getElementById("perMonthProduction").innerText = monthProduction;
+}
+
+
+
+
+
+
+
+
+
+
+                // Display the latest value (finished length) and time since last update
+                if (latestValue !== null && latestTimestamp !== null) {
+                    document.getElementById("lastValueDisplay").innerText = latestValue;
+                    
+                    var hoursAgo = Math.floor((Date.now() - latestTimestamp) / (1000 * 60 * 60));
+                    document.getElementById("lastUpdateDisplay").innerText = hoursAgo + " hours ago";
+                }
+
+
+
+// Update machine status
+        if (latestValue !== null) {
+            // Check machine status
+            if (lastKnownLength !== null && lastKnownLength !== latestValue) {
+                document.getElementById("machineStatus").innerText = " Running";
+            } else {
+                document.getElementById("machineStatus").innerText = "Stopped";
+            }
+
+            // Update last known length
+            lastKnownLength = latestValue; // Update to current value for the next check
+        }
+
+
+
+            });
+
+
+
+
+
+           var perDayRef = database.ref('Sensor/perday');
+perDayRef.on('value', function(snapshot) {
+    const data = snapshot.val(); // Get the snapshot value
+    let count;
+
+    // Check if the snapshot has valid data and if count exists
+    if (data && data.count !== undefined) {
+        count = data.count; // If count is present, use it
+    } else {
+        count = "N/A"; // Otherwise, set it to "N/A"
+    }
+
+    // Display the count or "N/A" accordingly
+    document.getElementById("last24HourProduction").innerText = count;
+
+    // Push the actual count to the array; use 0 for actual zero count
+    dailyProductionData.push(count === "N/A" ? 0 : count);
+});
+
+
+
+
+        }
+
+        monitorData();
+
+
+
+
+
+
+
+
+// Function to export daily and monthly production to Excel
+function exportToExcel() {
+    var wb = XLSX.utils.book_new(); // Create a new workbook
+
+
+
+
+
+
+
+// ============= Sheet 1: Daily Production (Current Month) =============
+// Initialize the array for the daily production sheet with headers
+var dailySheetData = [["Date", "Daily Production"]]; // Headers for daily production sheet
+var currentMonth = new Date().getMonth(); // Get the current month (0 = January, 9 = October)
+var dailyProductionData = productionChart.data.datasets[0].data; // Get cumulative data from the chart
+var daysInCurrentMonth = new Date(new Date().getFullYear(), currentMonth + 1, 0).getDate(); // Get number of days in current month
+
+// Create an object to store the first and last production value of each day
+var dailyFirstLastMap = {};
+
+// Loop over the production data to store the first and last value for each day
+for (var i = 0; i < productionChart.data.labels.length; i++) {
+    var date = new Date(productionChart.data.labels[i]);  // Date from chart labels
+    var currentCumulative = dailyProductionData[i]; // Get the current day's cumulative value
+
+    // Check if the date belongs to the current month
+    if (date.getMonth() === currentMonth) {
+        var day = date.getDate();  // Get the day of the month (1, 2, 3, ...)
+        var formattedDate = "OCT " + (day < 10 ? "0" + day : day); // Format the date
+
+        // If it's the first entry of the day, store it as the first value
+        if (!dailyFirstLastMap[formattedDate]) {
+            dailyFirstLastMap[formattedDate] = { first: currentCumulative, last: currentCumulative };
+        }
+
+        // Continuously update the last value of the day
+        dailyFirstLastMap[formattedDate].last = currentCumulative;
+    }
+}
+
+// Calculate the daily production by subtracting the first value from the last value of each day
+for (var day = 1; day <= daysInCurrentMonth; day++) {
+    var formattedDate = "OCT " + (day < 10 ? "0" + day : day); // Format the date
+    var productionValue = 0;
+
+    if (dailyFirstLastMap[formattedDate]) {
+        var firstValue = dailyFirstLastMap[formattedDate].first;
+        var lastValue = dailyFirstLastMap[formattedDate].last;
+        productionValue = lastValue - firstValue;  // Production for the day
+    }
+
+    dailySheetData.push([formattedDate, productionValue]); // Push each date and its production to the sheet
+}
+
+// Create the Daily Production sheet and append it to the workbook
+var dailySheet = XLSX.utils.aoa_to_sheet(dailySheetData);
+XLSX.utils.book_append_sheet(wb, dailySheet, "Daily Production");
+
+
+// ============= Sheet 2: Monthly Production (Jan - Dec) =============
+    var monthlySheetData = [["Month", "Total Monthly Production"]]; // Headers for Monthly Production sheet
+    var monthlyTotals = {}; // Object to keep track of monthly totals
+    var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; // Month names
+
+    // Loop over the chart data to compute monthly production totals
+    for (var i = 0; i < productionChart.data.labels.length; i++) {
+        var date = new Date(productionChart.data.labels[i]);  // Date from chart labels
+        var currentCumulative = dailyProductionData[i]; // Get the current cumulative production
+        var monthKey = date.getMonth(); // Get the month as a key (0 = January, 11 = December)
+
+        // Initialize monthly totals for each month
+        if (!monthlyTotals[monthKey]) {
+            monthlyTotals[monthKey] = { start: currentCumulative, end: currentCumulative };
+        } else {
+            monthlyTotals[monthKey].end = currentCumulative;
+        }
+    }
+
+
+
+
+
+
+
+    // Calculate total production for each month
+    for (var month = 0; month < 12; month++) {
+        if (monthlyTotals[month]) {
+            var monthProduction = monthlyTotals[month].end - monthlyTotals[month].start; // Calculate monthly production
+            monthlySheetData.push([monthNames[month], monthProduction]); // Add to the monthly sheet
+        } else {
+            // If there is no data for a particular month, set it to 0
+            monthlySheetData.push([monthNames[month], 0]);
+        }
+    }
+
+    // Create the Monthly Production sheet and append it to the workbook
+    var monthlySheet = XLSX.utils.aoa_to_sheet(monthlySheetData);
+    XLSX.utils.book_append_sheet(wb, monthlySheet, "Monthly Production");
+
+    // Export the workbook as an Excel file
+    XLSX.writeFile(wb, "ProductionReport.xlsx");
+}
+
+
+  // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            localStorage.setItem("loggedIn", "false"); // Reset login flag
+            alert('You have been logged out.');
+            window.location.href = "index.html"; // Redirect to login page
+        });
+
+        // Function to navigate to main.html
+        function goBack() {
+            window.location.href = 'main.html';
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StressON Engineering - Device Downtime</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Include Chart.js Zoom plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+
+
+     <style>
+
+
+body 
+<header>
+    <h1>StressON Engineering</h1>
+</header>
+
+
+
+ 
+        body {
+           margin: 0;
+    padding-top: 80px;  /* Height of the fixed header */
+    padding-bottom: 120px;  /* Increased to ensure enough space above the footer */
+    background-image: linear-gradient(to right, #f0f4ff, #e6eef8);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;  /* Ensures footer is at the bottom of the page */
+        }
+
+        header {
+            background-color: #007BFF;
+            padding: 20px 0;
+            color: white;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            margin-top: 100px; /* Adjust margin for fixed header */
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .downtime-box {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            width: 30%;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .downtime-box:hover {
+            transform: translateY(-5px);
+        }
+
+        .chart {
+            background-color: #f9f9f9;
+            height: 400px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+
+        footer {
+             background-color: #007BFF;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+    width: 100%;
+    position: fixed;
+    bottom: 0
+        }
+
+        .export-button,
+        .back-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+
+        .export-button:hover {
+            background-color: #218838;
+        }
+
+        .back-button {
+              background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 30px;
+    margin-bottom: 100px; /* Make sure there is enough space above the footer */
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.3s;
+    font-weight: bold;
+        }
+
+        .back-button:hover {
+            background-color: #0069d9;
+        }
+
+        .combined-chart-container {
+             margin-top: 25px; /* Reduce the top margin */
+    text-align: center;
+    width: 60%; /* Adjust the width of the container */
+    margin-left: auto;
+    margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    
+<header>
+        <h1>StressON Engineering</h1>
+    </header>
+
+    <h1>Device Downtime Overview</h1>
+
+    <div class="container">
+        <!-- No Material Downtime -->
+        <div class="downtime-box">
+            <h2>No Material Downtime</h2>
+            <canvas class="chart" id="noMaterialDowntimeChart" width="150" height="150"></canvas>
+            <button class="export-button" onclick="exportData('noMaterialDowntime')">Export to Excel</button>
+        </div>
+
+        <!-- Mold Defective Downtime -->
+        <div class="downtime-box">
+            <h2>Mold Defective Downtime</h2>
+            <canvas class="chart" id="moldDefectiveDowntimeChart" width="150" height="150"></canvas>
+            <button class="export-button" onclick="exportData('moldDefectiveDowntime')">Export to Excel</button>
+        </div>
+
+        <!-- Maintenance Downtime -->
+        <div class="downtime-box">
+            <h2>Maintenance Downtime</h2>
+            <canvas class="chart" id="maintenanceDowntimeChart" width="150" height="150"></canvas>
+            <button class="export-button" onclick="exportData('maintenanceDowntime')">Export to Excel</button>
+        </div>
+    </div>
+
+    <!-- Combined Downtime Chart -->
+    <div class="combined-chart-container">
+        <h2>Combined Downtime (All Categories)</h2>
+        <canvas id="combinedDowntimeChart" width="80" height="45"></canvas>
+    </div>
+
+    <button class="back-button" onclick="window.location.href='main.html'">Back to Page</button>
+
+<footer>
+        <p>&copy; 2024 StressON Engineering. All rights reserved.</p>
+    </footer>
+
+    <script>
+
+
+
+ // Debugging output
+        console.log("Logged In Status:", localStorage.getItem("loggedIn"));
+        if (localStorage.getItem("loggedIn") !== "true") {
+            console.log("Redirecting to index.html");
+            window.location.href = "index.html"; // Redirect to login page
+        }
+
+
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUtpT41WDSPM2Vwd9ONkXrKQjSD1FgFJs",
+            authDomain: "customer-3-54cd9.firebaseapp.com",
+            databaseURL: "https://customer-3-54cd9-default-rtdb.firebaseio.com/",
+            projectId: "customer-3-54cd9",
+            storageBucket: "customer-3-54cd9.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:123456789abcd"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+
+
+
+
+
+
+
+function fetchDowntimeData(downtimeType, chartId, sampleData) {
+    const path = downtimeType;  // Firebase path
+
+    return database.ref(path).once('value').then(snapshot => {
+        const data = snapshot.val();
+        let dateDurationMap = {}; // Object to hold durations summed by date
+        let labels = [];
+        let durations = [];
+
+        if (data) {
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const entry = data[key];
+
+                    // Ensure that duration and timestamp exist
+                    if (entry.duration !== undefined && entry.timestamp) {
+                        // Convert the timestamp from seconds to milliseconds
+                        const timestamp = entry.timestamp * 1000;
+
+                        // Convert to a Date object
+                        const date = new Date(timestamp);
+                        
+                        // Check if the date conversion is valid
+                        if (!isNaN(date.getTime())) {
+                            const dateString = date.toLocaleDateString(); // Get the date as a string
+
+                            // Sum durations for each date
+                            if (!dateDurationMap[dateString]) {
+                                dateDurationMap[dateString] = 0;
+                            }
+                            dateDurationMap[dateString] += entry.duration;
+                        } else {
+                            console.error('Invalid date for timestamp:', entry.timestamp);
+                        }
+                    }
+                }
+            }
+
+            // Populate labels and durations from the dateDurationMap
+            labels = Object.keys(dateDurationMap);
+            durations = Object.values(dateDurationMap);
+        } else {
+            // Fallback to sample data if no data is found
+            labels = sampleData.labels;
+            durations = sampleData.durations;
+        }
+
+        const ctx = document.getElementById(chartId).getContext('2d');
+
+        // Destroy the existing chart if it exists
+        if (ctx.chart) {
+            ctx.chart.destroy();
+        }
+
+        // Create the chart with the fetched data
+        ctx.chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Downtime Duration (minutes)',
+                    data: durations,
+                    backgroundColor: chartColors[downtimeType].backgroundColor,
+                    borderColor: chartColors[downtimeType].borderColor,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        return durations;
+    }).catch(error => {
+        console.error("Error fetching downtime data: ", error);
+        document.getElementById(chartId).innerHTML = "Error loading data.";
+        return sampleData.durations;
+    });
+}
+
+
+
+
+
+
+
+        // Sample data for charts
+        const sampleData = {
+            noMaterialDowntime: {
+                labels: ['01-10-2024', '02-10-2024', '03-10-2024', '05-10-2024'],
+                durations: [30, 45, 25, 50]
+            },
+            moldDefectiveDowntime: {
+                labels: ['01-10-2024', '02-10-2024', '03-10-2024', '05-10-2024'],
+                durations: [15, 20, 30, 10]
+            },
+            maintenanceDowntime: {
+                labels: ['01-10-2024', '02-10-2024', '03-10-2024', '05-10-2024'],
+                durations: [60, 70, 80, 40]
+            }
+        };
+
+// Sample color configurations for each chart
+const chartColors = {
+    noMaterialDowntime: {
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)'
+    },
+    moldDefectiveDowntime: {
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)'
+    },
+    maintenanceDowntime: {
+        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+        borderColor: 'rgba(255, 206, 86, 1)'
+    },
+    qualityDefectiveDowntime: {
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)'
+    }
+};
+
+
+
+
+        let noMaterialData, moldDefectiveData, maintenanceData;
+        fetchDowntimeData('noMaterialDowntime', 'noMaterialDowntimeChart', sampleData.noMaterialDowntime).then(data => noMaterialData = data);
+        fetchDowntimeData('moldDefectiveDowntime', 'moldDefectiveDowntimeChart', sampleData.moldDefectiveDowntime).then(data => moldDefectiveData = data);
+        fetchDowntimeData('maintenanceDowntime', 'maintenanceDowntimeChart', sampleData.maintenanceDowntime).then(data => maintenanceData = data);
+
+
+
+
+
+
+
+
+Promise.all([
+    fetchDowntimeData('noMaterialDowntime', 'noMaterialDowntimeChart', sampleData.noMaterialDowntime),
+    fetchDowntimeData('moldDefectiveDowntime', 'moldDefectiveDowntimeChart', sampleData.moldDefectiveDowntime),
+    fetchDowntimeData('maintenanceDowntime', 'maintenanceDowntimeChart', sampleData.maintenanceDowntime)
+]).then(values => {
+    console.log("Fetched Data Values:", values);  // Debugging log
+
+    const noMaterialDurations = values[0];  // Retrieved durations for noMaterialDowntime
+    const moldDefectiveDurations = values[1];  // Retrieved durations for moldDefectiveDowntime
+    const maintenanceDurations = values[2];  // Retrieved durations for maintenanceDowntime
+
+    // Step 1: Collect all unique labels (dates) across all datasets
+    const allLabelsSet = new Set([
+        ...sampleData.noMaterialDowntime.labels,
+        ...sampleData.moldDefectiveDowntime.labels,
+        ...sampleData.maintenanceDowntime.labels
+    ]);
+
+    // Convert the Set to an Array and sort it to maintain chronological order
+    const combinedLabels = Array.from(allLabelsSet).sort();
+    console.log("Combined Labels (All Dates):", combinedLabels);  // Debugging log
+
+    // Step 2: Initialize combinedData array to store the total downtime for each date
+    const combinedData = combinedLabels.map(label => {
+        // Get index of the current label in each dataset
+        const noMaterialIndex = sampleData.noMaterialDowntime.labels.indexOf(label);
+        const moldDefectiveIndex = sampleData.moldDefectiveDowntime.labels.indexOf(label);
+        const maintenanceIndex = sampleData.maintenanceDowntime.labels.indexOf(label);
+
+        // Safely retrieve durations, default to 0 if index is not found or duration is undefined
+        const noMaterialValue = noMaterialIndex !== -1 ? (noMaterialDurations[noMaterialIndex] || 0) : 0;
+        const moldDefectiveValue = moldDefectiveIndex !== -1 ? (moldDefectiveDurations[moldDefectiveIndex] || 0) : 0;
+        const maintenanceValue = maintenanceIndex !== -1 ? (maintenanceDurations[maintenanceIndex] || 0) : 0;
+
+        // Sum the values for this date
+        return noMaterialValue + moldDefectiveValue + maintenanceValue;
+    });
+
+    // Log the final combined data
+    console.log("Combined Data (Summed Values):", combinedData);
+
+    // Step 3: Define colors for the bars in the chart
+    const backgroundColors = [
+        'rgba(255, 99, 132, 0.6)',  // Red
+        'rgba(54, 162, 235, 0.6)',  // Blue
+        'rgba(255, 206, 86, 0.6)',  // Yellow
+        'rgba(75, 192, 192, 0.6)',  // Green
+        'rgba(153, 102, 255, 0.6)', // Purple
+        'rgba(255, 159, 64, 0.6)'   // Orange
+    ];
+
+    // Render the combined downtime chart
+    const ctxCombined = document.getElementById('combinedDowntimeChart').getContext('2d');
+    const combinedChart = new Chart(ctxCombined, {
+        type: 'bar',
+        data: {
+            labels: combinedLabels,  // X-axis labels (all dates)
+            datasets: [{
+                label: 'Total Downtime (minutes)',
+                data: combinedData,  // Combined downtime values for each label (date)
+                backgroundColor: backgroundColors,
+                borderColor: backgroundColors.map(color => color.replace('0.6', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true  // Ensure the Y-axis starts at zero
+                }
+            },
+            plugins: {
+                zoom: {
+                    pan: {
+                        enabled: true,  // Enable panning
+                        mode: 'xy',     // Allow panning in both x and y directions
+                        onPan: function({ chart }) {
+                            console.log('Panning...', chart);
+                        }
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true, // Enable zooming with mouse wheel
+                            modifierKey: 'ctrl', // Hold the Ctrl key while zooming
+                            onZoom: function({ chart }) {
+                                console.log('Zooming...', chart);
+                            }
+                        },
+                        drag: {
+                            enabled: true,  // Enable zooming by dragging
+                            modifierKey: 'ctrl', // Hold the Ctrl key while dragging
+                            onDrag: function({ chart }) {
+                                console.log('Dragging to zoom...', chart);
+                            }
+                        },
+                        pinch: {
+                            enabled: true // Enable pinch zooming on touch devices
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Add console logs to verify chart creation
+    console.log('Combined Chart created:', combinedChart);
+}).catch(error => {
+    console.error("Error fetching or processing data:", error);
+});
+
+
+
+
+
+
+
+
+
+
+
+// Export data to Excel from the Chart.js instance
+function exportData(type) {
+    let chartInstance;
+    let sheetName;
+
+    switch (type) {
+        case 'noMaterialDowntime':
+            chartInstance = Chart.getChart('noMaterialDowntimeChart');
+            sheetName = 'No Material Downtime Report';
+            break;
+        case 'moldDefectiveDowntime':
+            chartInstance = Chart.getChart('moldDefectiveDowntimeChart');
+            sheetName = 'Mold Defective Downtime Report';
+            break;
+        case 'maintenanceDowntime':
+            chartInstance = Chart.getChart('maintenanceDowntimeChart');
+            sheetName = 'Maintenance Downtime Report';
+            break;
+    }
+
+    // Get the labels and data from the chart instance
+    const labels = chartInstance.data.labels; // The dates
+    const data = chartInstance.data.datasets[0].data; // The durations
+
+    // Combine labels and data into an array of objects for easier export
+    const exportData = labels.map((label, index) => ({
+        Date: label,
+        Duration: data[index]
+    }));
+
+    // Create a new workbook and worksheet for Excel
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Append the worksheet to the workbook with a specific sheet name
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    // Save the file as an Excel file
+    XLSX.writeFile(wb, `${sheetName}.xlsx`);
+}
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downtime Data</title>
+    <!-- Include Firebase SDK (version 8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Global styling */
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        /* Fixed header */
+        header {
+            background-color: #007BFF; /* Company color */
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        /* Fixed footer */
+        footer {
+            background-color:  #333; /* Company color */
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Main content */
+        .main-content {
+            margin-top: 100px; /* Space for fixed header */
+            padding-bottom: 60px; /* Space for fixed footer */
+        }
+
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Chart styling */
+        #efficiencyChart {
+            width: 80%;
+            height: 100px;
+            margin-top: 20px;
+        }
+
+        /* Input field styling */
+        #targetInput {
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 200px;
+        }
+
+        /* Button styling */
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        /* Back button */
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+	/* Scrollable production table */
+        #productionTableContainer {
+            max-height: 200px; /* Set a height for scrolling */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fixed header -->
+    <header>
+        <h1>Stresson Engineering - Downtime Data</h1>
+    </header>
+
+    <!-- Main content -->
+    <div class="main-content">
+        <h1>Downtime Data</h1>
+        <table id="downtimeTable">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Total Downtimes</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here -->
+            </tbody>
+        </table>
+
+       <div id="productionTableContainer">
+    <table id="productionTable">
+        <thead>
+            <tr>
+                <th>Total Length</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Production data will be inserted here -->
+        </tbody>
+    </table>
+</div>
+
+        <h1>Efficiency Chart</h1>
+        <input type="number" id="targetInput" placeholder="Set Target Production" />
+        <button onclick="updateChart()">Update Chart</button>
+        <canvas id="efficiencyChart" height="300"></canvas>
+        <!-- Back button -->
+        <a href="main.html" class="back-button">Back to Main Page</a>
+    </div>
+
+    <!-- Fixed footer -->
+    <footer>
+        <p>&copy; 2024 Stresson Engineering. All Rights Reserved.</p>
+    </footer>
+
+<script>
+
+
+
+
+ // Debugging output
+        console.log("Logged In Status:", localStorage.getItem("loggedIn"));
+        if (localStorage.getItem("loggedIn") !== "true") {
+            console.log("Redirecting to index.html");
+            window.location.href = "index.html"; // Redirect to login page
+        }
+
+
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBUtpT41WDSPM2Vwd9ONkXrKQjSD1FgFJs",
+    authDomain: "customer-3-54cd9.firebaseapp.com",
+    databaseURL: "https://customer-3-54cd9-default-rtdb.firebaseio.com/",
+    projectId: "customer-3-54cd9",
+    storageBucket: "customer-3-54cd9.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:123456789abcd"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let efficiencyChart;
+let targetProduction = 0;
+
+// Function to fetch and display downtime data
+function fetchDowntimeData() {
+    const downtimeTypes = ['maintenanceDowntime', 'moldDefectiveDowntime', 'noMaterialDowntime'];
+
+    downtimeTypes.forEach(type => {
+        db.ref(type).once('value', (snapshot) => {
+            const data = snapshot.val();
+            aggregateDowntimeData(type, data);
+        });
+    });
+}
+
+// Function to aggregate downtime data and insert it into the table
+function aggregateDowntimeData(type, data) {
+    const aggregatedData = {};
+
+    if (data) { // Check if data exists
+        for (const key in data) {
+            const entry = data[key];
+            const duration = entry.duration;
+            const date = new Date(entry.timestamp * 1000).toISOString().split('T')[0]; // Extract date (YYYY-MM-DD)
+
+            // Only count the downtime if duration is greater than 0
+            if (duration > 0) {
+                if (!aggregatedData[date]) {
+                    aggregatedData[date] = 0;
+                }
+
+                // Increment the count for that date
+                aggregatedData[date]++;
+            }
+        }
+    }
+
+    // Insert aggregated data into the table
+    for (const date in aggregatedData) {
+        insertDataToTable(type, aggregatedData[date], date);
+    }
+}
+
+// Function to fetch and display production data
+function fetchProductionData() {
+    db.ref('Sensor/readings').once('value', (snapshot) => {
+        const data = snapshot.val();
+        aggregateProductionData(data);
+    });
+}
+
+
+
+
+// Function to aggregate production data and calculate daily production
+function aggregateProductionData(data) {
+    const aggregatedProductionData = {};
+    const dailyProduction = {};
+
+    if (data) { // Check if data exists
+        for (const key in data) {
+            const entry = data[key];
+            const length = entry.length; // Cumulative length
+            const timestamp = entry.timestamp; // Timestamp
+            
+            if (!timestamp || isNaN(length)) {
+                console.error(`Invalid entry for key ${key}:`, entry);
+                continue; // Skip invalid entries
+            }
+
+            // Convert timestamp to date (YYYY-MM-DD) with timezone handling
+            const date = new Date(timestamp * 1000).toISOString().split('T')[0];
+
+            // Only consider valid production lengths
+            if (length >= 0) {
+                aggregatedProductionData[date] = length; // Store cumulative length
+            } else {
+                console.warn(`Skipping negative length for key ${key}:`, length);
+            }
+        }
+    }
+
+
+
+    // Logging the aggregated production data for debugging
+    console.log("Aggregated Production Data:", aggregatedProductionData);
+
+    // Calculate daily production based on cumulative lengths
+    let previousProduction = 0;
+    const sortedDates = Object.keys(aggregatedProductionData).sort(); // Sort dates
+
+    // Logging sorted dates for debugging
+    console.log("Sorted Dates:", sortedDates);
+
+    for (const date of sortedDates) {
+        const currentProduction = aggregatedProductionData[date];
+
+        // Daily production is current cumulative length minus previous cumulative length
+        const actualProduction = currentProduction - previousProduction; // Calculate daily production
+
+        // Ensure that production values are non-negative
+        dailyProduction[date] = Math.max(actualProduction, 0); // Store actual production for that date
+        
+        // Log details for debugging
+        console.log(`Date: ${date}, Current Production: ${currentProduction}, Previous Production: ${previousProduction}, Actual Production: ${dailyProduction[date]}`);
+        
+        previousProduction = currentProduction; // Update previousProduction
+    }
+
+    // Insert aggregated daily production data into the table
+    for (const date in dailyProduction) {
+        insertProductionDataToTable(dailyProduction[date], date);
+    }
+}
+
+
+
+
+
+
+
+
+
+// Function to insert downtime data into the table
+function insertDataToTable(type, totalDowntimes, date) {
+    const tableBody = document.getElementById('downtimeTable').getElementsByTagName('tbody')[0];
+
+    const row = tableBody.insertRow();
+    const typeCell = row.insertCell(0);
+    const totalCell = row.insertCell(1);
+    const dateCell = row.insertCell(2);
+
+    typeCell.innerText = type;
+    totalCell.innerText = totalDowntimes;
+    dateCell.innerText = date;
+}
+
+// Function to insert production data into the table
+function insertProductionDataToTable(totalProduction, date) {
+    const tableBody = document.getElementById('productionTable').getElementsByTagName('tbody')[0];
+
+    const row = tableBody.insertRow();
+    const productionCell = row.insertCell(0);
+    const dateCell = row.insertCell(1);
+
+    productionCell.innerText = totalProduction;
+    dateCell.innerText = date;
+}
+
+
+
+
+
+// Updated Function to Update the Chart
+function updateChart() {
+    const ctx = document.getElementById('efficiencyChart').getContext('2d');
+    const labels = [];
+    const productionData = [];
+    const downtimeData = [];  // Will need to retrieve actual downtime data
+    
+    // Collect the production data from the table
+    const productionRows = document.querySelectorAll('#productionTable tbody tr');
+    
+    productionRows.forEach((row) => {
+        const date = row.cells[1].innerText;
+        const totalProduction = parseFloat(row.cells[0].innerText);
+        
+        labels.push(date);  // Add date to X-axis labels
+        productionData.push(totalProduction);  // Add production data
+        downtimeData.push(0);  // Placeholder for downtime data (can be retrieved similarly)
+    });
+
+    // Calculate efficiency (mocked as production / (production + downtime) for now)
+    const efficiencyData = productionData.map((production, index) => {
+        return ((production / (production + downtimeData[index])) * 100) || 0;
+    });
+
+    // Get target production from input
+    targetProduction = parseFloat(document.getElementById('targetInput').value) || 0;
+
+    // Destroy previous chart instance if it exists
+    if (efficiencyChart) {
+        efficiencyChart.destroy();
+    }
+
+    // Generate the updated chart
+    efficiencyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Production',
+                    data: productionData,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                },
+                {
+                    label: 'Downtime',
+                    data: downtimeData,  // Update when downtime data is fetched
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill: false,
+                },
+                {
+                    label: 'Efficiency',
+                    data: efficiencyData,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    fill: false,
+                    yAxisID: 'efficiency-y-axis'
+                },
+                {
+                    label: 'Target',
+                    data: Array(labels.length).fill(targetProduction),
+                    borderColor: 'rgba(255, 205, 86, 1)',
+                    fill: false,
+                    borderDash: [5, 5]
+                }
+            ]
+        },
+        options: {
+            scales: {
+                yAxes: [
+                    {
+                        ticks: {
+                            beginAtZero: true,
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Production/Downtime (units)'
+                        },
+                    },
+                    {
+                        id: 'efficiency-y-axis',
+                        position: 'right',
+                        ticks: {
+                            beginAtZero: true,
+                            max: 100,
+                            callback: function(value) { return value + "%" }
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Efficiency (%)'
+                        },
+                    }
+                ]
+            },
+            elements: {
+                line: {
+                    tension: 0 // Disable bezier curve
+                }
+            }
+        }
+    });
+}
+
+
+
+
+
+
+// Call the functions to fetch data
+fetchDowntimeData();
+fetchProductionData();
+</script>
+
+</body>
+</html>

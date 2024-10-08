@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quality Defective Count</title>
+    <!-- Load Firebase App and Firebase Database as modules -->
+    <script type="module">
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUtpT41WDSPM2Vwd9ONkXrKQjSD1FgFJs",
+            authDomain: "customer-3-54cd9.firebaseapp.com",
+            databaseURL: "https://customer-3-54cd9-default-rtdb.firebaseio.com",
+            projectId: "customer-3-54cd9",
+            storageBucket: "customer-3-54cd9.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abc123def456"
+        };
+
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js';
+        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Reference to the quality defective data
+        const qualityDefectiveRef = ref(database, "qualityDefective");
+
+        const dayWiseCounts = {};
+
+        // Listen for value changes
+        onValue(qualityDefectiveRef, (snapshot) => {
+            const data = snapshot.val();
+            let totalCount = 0;
+
+            if (data === null) {
+                document.getElementById('count').textContent = "No data found.";
+                return;
+            }
+
+            for (const id in data) {
+                const timestamp = new Date(data[id].timestamp * 1000);
+                const dateString = timestamp.toLocaleDateString();
+                const defectiveCount = data[id].count || 1;
+
+                if (!dayWiseCounts[dateString]) {
+                    dayWiseCounts[dateString] = 0;
+                }
+                dayWiseCounts[dateString] += defectiveCount;
+                totalCount++;
+            }
+
+            document.getElementById('count').innerHTML = `Total Quality Defective Count: ${totalCount}`;
+            updateChart();
+            updateTable();
+        }, (error) => {
+            console.error('Error fetching data:', error);
+            document.getElementById('count').textContent = "Error loading count.";
+        });
+
+        function updateChart() {
+            const ctx = document.getElementById('defectiveChart').getContext('2d');
+            const labels = Object.keys(dayWiseCounts);
+            const data = Object.values(dayWiseCounts);
+
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Defective Count',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable() {
+            const tableBody = document.getElementById('defectiveTableBody');
+            tableBody.innerHTML = "";
+
+            for (const date in dayWiseCounts) {
+                const row = document.createElement('tr');
+                const dateCell = document.createElement('td');
+                const countCell = document.createElement('td');
+
+                dateCell.textContent = date;
+                countCell.textContent = dayWiseCounts[date];
+
+                row.appendChild(dateCell);
+                row.appendChild(countCell);
+                tableBody.appendChild(row);
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content {
+            margin-top: 70px;
+            padding: 20px;
+            flex: 1;
+            text-align: center;
+            padding-bottom: 100px;
+        }
+
+        footer {
+            background-color: black;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #count {
+            font-size: 2em;
+            color: #007bff;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: 350px;
+            margin: 20px auto;
+        }
+
+        table {
+            margin: auto;
+            border-collapse: collapse;
+            width: 60%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Back to Main Page button styling */
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+
+        .back-button-container {
+            text-align: center;
+            margin-top: 20px;
+            padding-bottom: 60px; /* Ensure space before footer */
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Stresson Engineering</h1>
+    </header>
+
+    <div class="main-content">
+        <h1>Quality Defective Count</h1>
+        <p>The current count of quality defective items is:</p>
+        <div id="count">Loading...</div>
+
+        <canvas id="defectiveChart"></canvas>
+
+        <h2>Day-wise Quality Defective Count</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Defective Count</th>
+                </tr>
+            </thead>
+            <tbody id="defectiveTableBody">
+                <!-- Day-wise data will be populated here -->
+            </tbody>
+        </table>
+
+        <!-- Back to Main Page button -->
+        <div class="back-button-container">
+            <a href="main.html" class="back-button">Back to Main Page</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Stresson Engineering</p>
+    </footer>
+
+</body>
+</html>
