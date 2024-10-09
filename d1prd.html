@@ -120,6 +120,53 @@
         color: white;
         z-index: 1000; /* Make sure it's on top of other elements */
     }
+
+/* Media query for mobile devices */
+@media only screen and (max-width: 768px) {
+    /* Adjust padding for container */
+    .container {
+        padding: 10px;
+        margin-top: 60px; /* Reduce margin to fit mobile screen */
+        margin-bottom: 40px; /* Adjust footer margin */
+    }
+
+    /* Adjust header font size */
+    .header {
+        font-size: 22px; /* Smaller font size for mobile */
+        padding: 15px 0;
+    }
+
+    /* Change grid layout to single column */
+    .grid {
+        grid-template-columns: 1fr; /* Make grid items full width */
+        grid-gap: 15px; /* Smaller gap */
+    }
+
+    /* Adjust font size in info-boxes */
+    .info-box {
+        font-size: 16px; /* Smaller font for mobile */
+        padding: 15px; /* Adjust padding */
+    }
+
+    /* Adjust chart container size */
+    .chart-container {
+        height: 300px; /* Reduce chart height for mobile */
+    }
+
+    /* Adjust export button */
+    .export-button {
+        width: 100%; /* Full width button on mobile */
+        font-size: 14px; /* Adjust font size */
+        padding: 8px 16px;
+    }
+
+    /* Footer adjustments */
+    footer {
+        padding: 15px 0; /* Less padding for mobile */
+        font-size: 14px; /* Smaller font size */
+    }
+}
+
 </style>
 
 
