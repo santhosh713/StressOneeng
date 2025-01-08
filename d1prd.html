@@ -16,7 +16,15 @@
 
 
 <style>
-     body {
+    /* Universal Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Body Styling */
+    body {
         font-family: 'Arial', sans-serif;
         background-color: #f5f5f5;
         color: #333;
@@ -24,93 +32,99 @@
         padding: 0;
         display: flex;
         flex-direction: column;
-        min-height: 100vh; /* Ensures the footer stays at the bottom */
+        min-height: 100vh; /* Ensures footer stays at the bottom */
     }
 
+    /* Desktop Container Styling */
     .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-        margin-top: 80px; /* Adjust to the height of the header */
-        margin-bottom: 60px; /* Adjust to the height of the footer */
-        flex-grow: 1; /* Make the container take up the remaining space */
+        max-width: 1400px; /* Increased max width for larger desktop view */
+        margin: 80px auto 60px auto; /* Space for header/footer */
+        padding: 30px; /* More padding for spacious layout */
+        flex-grow: 1; /* Makes container take up remaining space */
     }
 
-   .header {
-        position: fixed; /* Fix the header to the top */
+    /* Header Styling */
+    .header {
+        position: fixed; /* Sticks header to the top */
         top: 0;
         left: 0;
         right: 0;
-        background-color: #007BFF; /* Update to your company color */
+        background-color: #007BFF;
         color: white;
-        font-size: 28px;
+        font-size: 2.2rem; /* Larger font for desktop */
         text-align: center;
-        padding: 20px 0;
-        z-index: 1000; /* Make sure it's on top of other elements */
+        padding: 25px 0;
+        z-index: 1000; /* Ensures it stays above other elements */
     }
 
+    /* Section Styling */
     .section {
         background-color: white;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 30px; /* More padding for a spacious feel */
+        margin-bottom: 30px;
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
         border-radius: 10px;
     }
 
     .section h2 {
-        font-size: 22px;
-        color: #007BFF; /* Updated color */
-        margin-bottom: 10px;
+        font-size: 2rem; /* Larger font for headings */
+        color: #007BFF;
+        margin-bottom: 15px;
     }
 
+    /* Grid Layout for Desktop */
     .grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-gap: 20px;
+        grid-template-columns: repeat(4, 1fr); /* Increased columns to 4 */
+        gap: 30px; /* Larger gap for spacious layout */
     }
 
+    /* Info Box Styling */
     .info-box {
-        padding: 20px;
+        padding: 30px; /* More padding for better spacing */
         background-color: #fafafa;
         border: 1px solid #ddd;
         border-radius: 10px;
         text-align: center;
-        transition: transform 0.2s; /* Smooth transition */
+        transition: transform 0.2s;
     }
 
     .info-box:hover {
-        transform: translateY(-5px); /* Lift effect on hover */
-        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+        transform: translateY(-5px); /* Lift effect */
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2); /* Stronger shadow */
     }
 
+    /* Chart Container Styling */
     .chart-container {
         width: 100%;
-        height: 400px;
+        height: 500px; /* Increased height for better visibility */
         position: relative;
         background-color: white;
-        padding: 20px;
+        padding: 30px;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-top: 20px; /* Add margin for spacing */
-        border: 2px solid #007BFF; /* Border for better definition */
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1);
+        margin-top: 30px;
+        border: 2px solid #007BFF;
     }
 
+    /* Export Button Styling */
     .export-button {
-        background-color: #007BFF; /* Updated color */
+        background-color: #007BFF;
         color: white;
-        padding: 10px 20px;
+        padding: 15px 30px; /* Bigger button for desktop */
         border: none;
         cursor: pointer;
         border-radius: 5px;
-        font-size: 16px;
+        font-size: 1.2rem; /* Larger font size */
     }
 
     .export-button:hover {
-        background-color: #0056b3; /* Darker shade for hover */
+        background-color: #0056b3;
     }
 
+    /* Footer Styling */
     footer {
-        position: fixed; /* Fix the footer to the bottom */
+        position: fixed; /* Fixes footer to the bottom */
         bottom: 0;
         left: 0;
         right: 0;
@@ -118,57 +132,60 @@
         text-align: center;
         background-color: #333;
         color: white;
-        z-index: 1000; /* Make sure it's on top of other elements */
+        z-index: 1000;
     }
 
-/* Media query for mobile devices */
-@media only screen and (max-width: 768px) {
-    /* Adjust padding for container */
-    .container {
-        padding: 10px;
-        margin-top: 60px; /* Reduce margin to fit mobile screen */
-        margin-bottom: 40px; /* Adjust footer margin */
-    }
+    /* Media Query for Mobile Devices (max-width: 768px) */
+    @media only screen and (max-width: 768px) {
+        /* Header Adjustments */
+        .header {
+            font-size: 1.5rem;
+            padding: 10px 0;
+        }
 
-    /* Adjust header font size */
-    .header {
-        font-size: 22px; /* Smaller font size for mobile */
-        padding: 15px 0;
-    }
+        /* Adjust container for mobile */
+        .container {
+            width: 95%; /* Full width for smaller screens */
+            margin-top: 60px; /* Adjust spacing for smaller header */
+            margin-bottom: 50px;
+            padding: 10px; /* Less padding */
+        }
 
-    /* Change grid layout to single column */
-    .grid {
-        grid-template-columns: 1fr; /* Make grid items full width */
-        grid-gap: 15px; /* Smaller gap */
-    }
+        /* Section adjustments */
+        .section h2 {
+            font-size: 1.2rem; /* Smaller heading */
+        }
 
-    /* Adjust font size in info-boxes */
-    .info-box {
-        font-size: 16px; /* Smaller font for mobile */
-        padding: 15px; /* Adjust padding */
-    }
+        /* Single-column grid */
+        .grid {
+            grid-template-columns: 1fr; /* Single-column layout */
+            gap: 10px; /* Reduced gap */
+        }
 
-    /* Adjust chart container size */
-    .chart-container {
-        height: 300px; /* Reduce chart height for mobile */
-    }
+        /* Chart adjustments */
+        .chart-container {
+            height: 300px; /* Reduce height */
+        }
 
-    /* Adjust export button */
-    .export-button {
-        width: 100%; /* Full width button on mobile */
-        font-size: 14px; /* Adjust font size */
-        padding: 8px 16px;
-    }
+        /* Info box adjustments */
+        .info-box {
+            font-size: 0.9rem; /* Smaller font */
+            padding: 10px; /* Less padding */
+        }
 
-    /* Footer adjustments */
-    footer {
-        padding: 15px 0; /* Less padding for mobile */
-        font-size: 14px; /* Smaller font size */
-    }
-}
+        /* Full-width button for mobile */
+        .export-button {
+            width: 100%;
+            font-size: 0.9rem; /* Smaller font size */
+        }
 
+        /* Footer adjustments */
+        footer {
+            font-size: 0.8rem; /* Smaller footer text */
+            padding: 10px 0;
+        }
+    }
 </style>
-
 
 
 
@@ -547,7 +564,6 @@ function exportToExcel() {
 
 
 
-
 // ============= Sheet 1: Daily Production (Current Month) =============
 // Initialize the array for the daily production sheet with headers
 var dailySheetData = [["Date", "Daily Production"]]; // Headers for daily production sheet
@@ -566,26 +582,27 @@ for (var i = 0; i < productionChart.data.labels.length; i++) {
     // Check if the date belongs to the current month
     if (date.getMonth() === currentMonth) {
         var day = date.getDate();  // Get the day of the month (1, 2, 3, ...)
-        var formattedDate = "OCT " + (day < 10 ? "0" + day : day); // Format the date
+        var formattedDate = `${date.toLocaleString("en-US", { month: "short" })} ${day < 10 ? "0" + day : day}`; // Format the date (e.g., OCT 01)
 
         // If it's the first entry of the day, store it as the first value
-        if (!dailyFirstLastMap[formattedDate]) {
-            dailyFirstLastMap[formattedDate] = { first: currentCumulative, last: currentCumulative };
+        if (!dailyFirstLastMap[day]) {
+            dailyFirstLastMap[day] = { first: currentCumulative, last: currentCumulative };
         }
 
         // Continuously update the last value of the day
-        dailyFirstLastMap[formattedDate].last = currentCumulative;
+        dailyFirstLastMap[day].last = currentCumulative;
     }
 }
 
 // Calculate the daily production by subtracting the first value from the last value of each day
 for (var day = 1; day <= daysInCurrentMonth; day++) {
-    var formattedDate = "OCT " + (day < 10 ? "0" + day : day); // Format the date
+    var formattedDate = new Date(new Date().getFullYear(), currentMonth, day)
+        .toLocaleDateString("en-US", { month: "short", day: "2-digit" }); // Format the date (e.g., "Oct 01")
     var productionValue = 0;
 
-    if (dailyFirstLastMap[formattedDate]) {
-        var firstValue = dailyFirstLastMap[formattedDate].first;
-        var lastValue = dailyFirstLastMap[formattedDate].last;
+    if (dailyFirstLastMap[day]) {
+        var firstValue = dailyFirstLastMap[day].first;
+        var lastValue = dailyFirstLastMap[day].last;
         productionValue = lastValue - firstValue;  // Production for the day
     }
 
@@ -595,6 +612,7 @@ for (var day = 1; day <= daysInCurrentMonth; day++) {
 // Create the Daily Production sheet and append it to the workbook
 var dailySheet = XLSX.utils.aoa_to_sheet(dailySheetData);
 XLSX.utils.book_append_sheet(wb, dailySheet, "Daily Production");
+
 
 
 // ============= Sheet 2: Monthly Production (Jan - Dec) =============
