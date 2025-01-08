@@ -9,73 +9,64 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
 
-    <style>
-        body {
-            margin: 0;
-            padding-top: 80px;
-            padding-bottom: 120px;
-            background-image: linear-gradient(to right, #f0f4ff, #e6eef8);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 
-        header {
-            background-color: #007BFF;
-            padding: 20px 0;
-            color: white;
-            text-align: center;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
 
-       header h1 {
+
+<style>
+body {
     margin: 0;
-    font-size: 2em; /* Default for larger screens */
+    padding: 0;
+    background-image: linear-gradient(to right, #f0f4ff, #e6eef8);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure full height coverage */
+    font-family: 'Arial', sans-serif;
+}
+
+header {
+    background-color: #007BFF;
+    color: white;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px 0;
+}
+
+header h1 {
+    font-size: 2rem;
+    margin: 0;
 }
 
 @media (max-width: 768px) {
     header h1 {
-        font-size: 1.5em; /* Smaller font size for mobile */
+        font-size: 1.5rem; /* Adjust for mobile */
     }
 }
 
-h1 {
-    text-align: center;
-    color: #2c3e50;
-    font-size: 2.5em; /* Default for larger screens */
-    margin-bottom: 20px;
-}
-
-@media (max-width: 768px) {
-    h1 {
-        font-size: 1.8em; /* Smaller for mobile */
-    }
-}
-
-
-        .container {
+.container {
     display: flex;
-    flex-direction: row; /* Default for larger screens */
+    flex-direction: row;
+    flex-wrap: wrap; /* Enables wrapping for smaller screens */
     gap: 20px;
     padding: 20px;
-    margin-top: 20px;
+    margin-top: 100px; /* Adjusted for fixed header */
+    margin-bottom: 100px; /* Added bottom margin to prevent overlap with footer */
     justify-content: space-between;
 }
 
 @media (max-width: 768px) {
     .container {
-        flex-direction: column; /* Stack boxes vertically on mobile */
+        flex-direction: column; /* Stack vertically on mobile */
         padding: 10px;
+        margin-bottom: 120px; /* Additional margin for smaller screens */
     }
 }
 
-        }
-
-     .downtime-box {
+.downtime-box {
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -85,90 +76,118 @@ h1 {
     transition: transform 0.2s;
 }
 
+.downtime-box:hover {
+    transform: translateY(-5px);
+}
+
 @media (max-width: 768px) {
     .downtime-box {
-        width: 100%; /* Full width for mobile */
+        width: 100%; /* Full width on mobile */
     }
 }
 
+footer {
+    background-color: #007BFF;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+}
 
-        .downtime-box:hover {
-            transform: translateY(-5px);
-        }
-
-        footer {
-            background-color: #007BFF;
-            color: white;
-            text-align: center;
-            padding: 20px 0;
-            width: 100%;
-            position: fixed;
-            bottom: 0;
-        }
-
-        .back-button {
+.back-button {
     background-color: #007bff;
     color: white;
     border: none;
     padding: 10px 20px;
     margin-top: 30px;
-    margin-bottom: 100px;
+    margin-bottom: 120px; /* Ensures space above footer */
     border-radius: 8px;
     cursor: pointer;
     font-size: 1.1em;
     transition: background-color 0.3s;
     font-weight: bold;
+    display: block;
+    text-align: center;
+}
+
+.back-button:hover {
+    background-color: #0069d9;
 }
 
 @media (max-width: 768px) {
     .back-button {
-        padding: 10px 15px; /* Adjust button padding for mobile */
-        margin-bottom: 50px; /* Reduce bottom margin */
+        padding: 10px 15px;
     }
 }
 
-
-        .back-button:hover {
-            background-color: #0069d9;
-        }
 .combined-table-container {
     margin-top: 25px;
     text-align: center;
-    width: 60%; /* Default for larger screens */
+    width: 60%;
     margin-left: auto;
     margin-right: auto;
 }
 
 @media (max-width: 768px) {
     .combined-table-container {
-        width: 100%; /* Full width for mobile */
-        padding: 0 10px; /* Add some padding for mobile */
+        width: 100%;
+        padding: 0 10px;
     }
 }
 
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
 
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
+th {
+    background-color: #007BFF;
+    color: white;
+    text-align: center;
+}
 
-        th {
-            background-color: #007BFF;
-            color: white;
-            text-align: center;
-        }
+td {
+    text-align: center;
+}
 
-        td {
-            text-align: center;
-        }
-    </style>
+.export-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    margin-top: 20px;
+    margin-bottom: 50px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s;
+    font-weight: bold;
+}
+
+.export-button:hover {
+    background-color: #0069d9;
+}
+
+</style>
+
+
+
+
+
 </head>
+
+<div style="overflow-x: auto; white-space: nowrap;">
+    <canvas id="chartId" width="800" height="400"></canvas>
+</div>
+
 <body>
 
 <header>
@@ -197,23 +216,29 @@ h1 {
     </div>
 </div>
 
-<!-- Combined Downtime Table -->
 <div class="combined-table-container">
     <h2>Combined Downtime (All Categories)</h2>
-    <table id="combinedDowntimeTable">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Total Downtime (Minutes)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Rows will be inserted here dynamically -->
-        </tbody>
-    </table>
+    <div style="max-height: 160px; overflow-y: auto;"> <!-- Wrapper for scroll -->
+        <table id="combinedDowntimeTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Total Downtime (Minutes)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be inserted here dynamically -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
+
 <button class="back-button" onclick="window.location.href='main.html'">Back to Page</button>
+
+<button id="exportButton" class="back-button">Export to Excel</button>
+
+
 
 <footer>
     <p>&copy; 2024 StressON Engineering. All rights reserved.</p>
@@ -287,15 +312,21 @@ const sampleData = {
     }
 };
 
+// Declare variables at a higher scope
+let combinedLabels = [];
+let noMaterial = {};
+let moldDefective = {};
+let maintenance = {};
+
 // Fetch data from Firebase for each downtime category
 Promise.all([
     fetchDowntimeData('noMaterialDowntime', sampleData.noMaterialDowntime),
     fetchDowntimeData('moldDefectiveDowntime', sampleData.moldDefectiveDowntime),
     fetchDowntimeData('maintenanceDowntime', sampleData.maintenanceDowntime)
 ]).then(values => {
-    const noMaterial = values[0];
-    const moldDefective = values[1];
-    const maintenance = values[2];
+    noMaterial = values[0];
+    moldDefective = values[1];
+    maintenance = values[2];
 
     // Initialize individual charts for each category
     createChart('noMaterialDowntimeChart', noMaterial.labels, noMaterial.durations, 'No Material Downtime');
@@ -304,7 +335,7 @@ Promise.all([
 
     // Combine and sum data for each date
     const combinedLabelsSet = new Set([...noMaterial.labels, ...moldDefective.labels, ...maintenance.labels]);
-    const combinedLabels = Array.from(combinedLabelsSet).sort();
+    combinedLabels = Array.from(combinedLabelsSet).sort();
 
     const combinedData = combinedLabels.map(label => {
         const noMaterialIndex = noMaterial.labels.indexOf(label);
@@ -333,7 +364,38 @@ Promise.all([
     });
 });
 
-// Function to create individual charts
+// Export to Excel Functionality
+document.getElementById('exportButton').addEventListener('click', function () {
+    const breakdownData = [];
+    combinedLabels.forEach((date, index) => {
+        const noMaterialIndex = noMaterial.labels.indexOf(date);
+        const moldDefectiveIndex = moldDefective.labels.indexOf(date);
+        const maintenanceIndex = maintenance.labels.indexOf(date);
+
+        const noMaterialValue = noMaterialIndex !== -1 ? noMaterial.durations[noMaterialIndex] : 0;
+        const moldDefectiveValue = moldDefectiveIndex !== -1 ? moldDefective.durations[moldDefectiveIndex] : 0;
+        const maintenanceValue = maintenanceIndex !== -1 ? maintenance.durations[maintenanceIndex] : 0;
+
+        breakdownData.push({
+            Date: date,
+            "No Material Downtime (min)": noMaterialValue,
+            "Mold Defective Downtime (min)": moldDefectiveValue,
+            "Maintenance Downtime (min)": maintenanceValue,
+            "Total Downtime (min)": noMaterialValue + moldDefectiveValue + maintenanceValue
+        });
+    });
+
+    // Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(breakdownData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Downtime Breakdown");
+
+    // Export to Excel
+    XLSX.writeFile(workbook, "Downtime_Breakdown.xlsx");
+});
+
+
+
 function createChart(chartId, labels, data, labelName) {
     const ctx = document.getElementById(chartId).getContext('2d');
     new Chart(ctx, {
@@ -349,7 +411,32 @@ function createChart(chartId, labels, data, labelName) {
             }]
         },
         options: {
+            responsive: true,
+            plugins: {
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: 'x', // Horizontal panning
+                        threshold: 0 // No minimal drag distance
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true // Zoom with mouse wheel
+                        },
+                        pinch: {
+                            enabled: true // Zoom with touch gestures
+                        },
+                        mode: 'x' // Zoom horizontally
+                    }
+                }
+            },
             scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        autoSkip: false // Show all labels
+                    }
+                },
                 y: {
                     beginAtZero: true
                 }
@@ -357,6 +444,11 @@ function createChart(chartId, labels, data, labelName) {
         }
     });
 }
+
+
+
+
+
 </script>
 </body>
 </html>
