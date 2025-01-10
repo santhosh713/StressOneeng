@@ -233,18 +233,13 @@ function updateMonthlyTable(monthlyTableBodyId, monthlyTotals) {
     }
 }
 
-
 function fetchProductionData(staff, chartId, tableBodyId, countId, monthlyTableBodyId) {
     const dayWiseTotals = staff === 'StaffA' ? dayWiseTotalsA :
                           staff === 'StaffB' ? dayWiseTotalsB : dayWiseTotalsC;
     const monthlyTotals = staff === 'StaffA' ? monthlyTotalsA :
                           staff === 'StaffB' ? monthlyTotalsB : monthlyTotalsC;
 
-    // Initialize monthly totals with all months set to 0
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    months.forEach(month => {
-        monthlyTotals[month + ' 2024'] = 0; // Assuming the year is 2024, adjust if necessary
-    });
 
     onValue(staffRefs[staff], (snapshot) => {
         const data = snapshot.val();
@@ -254,18 +249,21 @@ function fetchProductionData(staff, chartId, tableBodyId, countId, monthlyTableB
         }
 
         const latestCounts = {};
-        const lastEntryForMonth = {};  // Track the latest entry for each month
+        const lastEntryForMonth = {}; // Track the latest entry for each month
+        const years = new Set();      // Collect years dynamically
 
         for (const id in data) {
             const entry = data[id];
             const date = new Date(entry.timestamp * 1000);
-            const dateKey = date.toLocaleDateString();
-            const monthKey = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+            const dateKey = date.toLocaleDateString(); // Format: MM/DD/YYYY
+            const monthKey = date.toLocaleString('default', { month: 'short', year: 'numeric' }); // Format: Jan 2025
+            const year = date.getFullYear();
 
-            // Check if count exists and if it's a valid number
+            years.add(year); // Track the year dynamically
+
             const count = (entry.count !== undefined && !isNaN(entry.count)) ? entry.count : 0;
 
-            // Update latestCounts for each date
+            // Update the latest daily count for each date
             if (!latestCounts[dateKey] || entry.timestamp > latestCounts[dateKey].timestamp) {
                 latestCounts[dateKey] = { count, timestamp: entry.timestamp };
             }
@@ -276,18 +274,33 @@ function fetchProductionData(staff, chartId, tableBodyId, countId, monthlyTableB
             }
         }
 
+        // Initialize monthly totals for all detected years
+        years.forEach(year => {
+            months.forEach(month => {
+                const monthYearKey = `${month} ${year}`;
+                if (!monthlyTotals[monthYearKey]) {
+                    monthlyTotals[monthYearKey] = 0;
+                }
+            });
+        });
+
         // Calculate total production count for daily totals
         let totalProductionCount = 0;
         for (const date in latestCounts) {
-            dayWiseTotals[date] = latestCounts[date].count;  // Extract the count from the object
-            totalProductionCount += latestCounts[date].count;
+            const dailyCount = latestCounts[date].count;
+            const monthKey = new Date(date).toLocaleString('default', { month: 'short', year: 'numeric' });
+
+            dayWiseTotals[date] = dailyCount;  // Store daily count
+            totalProductionCount += dailyCount;
+
+            // Update monthly totals without duplicating counts
+            if (!monthlyTotals[monthKey]) {
+                monthlyTotals[monthKey] = 0;
+            }
+            monthlyTotals[monthKey] += dailyCount;
         }
 
-        // Update monthly totals by summing the latest daily values
-        for (const monthKey in lastEntryForMonth) {
-            monthlyTotals[monthKey] += lastEntryForMonth[monthKey].count;  // Add the latest value for each month
-        }
-
+        // Update UI components
         document.getElementById(countId).innerHTML = `Total Production Count for ${staff}: ${totalProductionCount}`;
         updateChart(chartId, dayWiseTotals, staff);
         updateTable(tableBodyId, dayWiseTotals);
